@@ -2,7 +2,7 @@
   "name": "quickscript",
   "displayName": "quickscript",
   "description": "快速执行package.json中的script",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "lx815",
   "author": "lx815",
   "engines": {
@@ -31,7 +31,7 @@
     "commands": [
       {
         "command": "package-scripts.runScript",
-        "title": "yarn xxx"
+        "title": "play"
       }
     ]
   },
