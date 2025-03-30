@@ -18,15 +18,34 @@ function findNearestPackageJson(startPath) {
 // 执行 npm run 脚本
 function runNpmScript(scriptName, packageJsonPath) {
   const projectDir = path.dirname(packageJsonPath);
-  const terminal = vscode.window.createTerminal({
-    name: `Run Script: ${scriptName}`,
-    cwd: projectDir,
-  });
+  const terminalName = scriptName;
+  let terminal = vscode.window.terminals.find((t) => t.name === terminalName);
+
+  if (!terminal) {
+    // 如果没有找到合适的终端，则创建一个新的
+    terminal = vscode.window.createTerminal({
+      name: terminalName,
+      cwd: projectDir,
+    });
+  }
+
   terminal.show();
   terminal.sendText(`npm run ${scriptName}`);
 }
 
 function activate(context) {
+  // 创建一个状态栏按钮
+  const statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Left,
+    100
+  );
+  statusBarItem.text = "$(play)";
+  statusBarItem.tooltip = "选择并运行 package.json 中的脚本";
+  statusBarItem.command = "package-scripts.runScript";
+  statusBarItem.show();
+
+  context.subscriptions.push(statusBarItem);
+
   let disposable = vscode.commands.registerCommand(
     "package-scripts.runScript",
     async (uri) => {
