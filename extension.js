@@ -1,7 +1,6 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const { spawn } = require("child_process");
 
 // 递归查找最近的 package.json
 function findNearestPackageJson(startPath) {
@@ -18,46 +17,13 @@ function findNearestPackageJson(startPath) {
 
 // 执行 npm run 脚本
 function runNpmScript(scriptName, packageJsonPath) {
-  return new Promise((resolve, reject) => {
-    const projectDir = path.dirname(packageJsonPath);
-    const child = spawn("npm", ["run", scriptName], {
-      cwd: projectDir,
-      shell: true, // 兼容 Windows
-    });
-
-    let errorOutput = "";
-
-    child.stderr.on("data", (data) => {
-      errorOutput += data.toString();
-    });
-
-    child.on("close", (code) => {
-      if (code === 0) {
-        vscode.window.showInformationMessage(
-          `✅ Script "${scriptName}" executed successfully!`,
-          { modal: false }
-        );
-        setTimeout(
-          () =>
-            vscode.commands.executeCommand("workbench.action.closeMessages"),
-          2000
-        ); // 2s 后自动关闭
-        resolve();
-      } else {
-        vscode.window.showErrorMessage(
-          `❌ Script "${scriptName}" failed!\nError: ${errorOutput}`
-        );
-        reject();
-      }
-    });
-
-    child.on("error", (err) => {
-      vscode.window.showErrorMessage(
-        `❌ Failed to run script "${scriptName}": ${err.message}`
-      );
-      reject();
-    });
+  const projectDir = path.dirname(packageJsonPath);
+  const terminal = vscode.window.createTerminal({
+    name: `Run Script: ${scriptName}`,
+    cwd: projectDir,
   });
+  terminal.show();
+  terminal.sendText(`npm run ${scriptName}`);
 }
 
 function activate(context) {
@@ -92,7 +58,7 @@ function activate(context) {
 
       const scriptKeys = Object.keys(scripts);
       const selectedScript = await vscode.window.showQuickPick(scriptKeys, {
-        placeHolder: "Select a script to run",
+        placeHolder: "选择一条指令执行",
       });
 
       if (!selectedScript) return;
