@@ -2,7 +2,7 @@
   "name": "quickscript",
   "displayName": "quickscript",
   "description": "快速执行package.json中的script",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "publisher": "lx815",
   "author": "lx815",
   "engines": {

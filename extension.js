@@ -30,7 +30,9 @@ function runNpmScript(scriptName, packageJsonPath) {
   }
 
   terminal.show();
-  terminal.sendText(`npm run ${scriptName}`);
+  scriptName === "codegen"
+    ? terminal.sendText(`yarn ${scriptName}`)
+    : terminal.sendText(`npm run ${scriptName}`);
 }
 
 function activate(context) {
