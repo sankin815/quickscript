@@ -30,12 +30,6 @@ vsce package
 vsce login lx815
 ```
 
-准备发布文件夹
-创建一个 publish 文件夹，将以下文件复制到文件夹中
-
-![1743933826220](images/step/1743933826220.png)
-进入文件夹终端执行
-
 ```bash
 vsce publish
 ```
