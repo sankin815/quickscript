@@ -2,6 +2,9 @@ import * as vscode from "vscode";
 import fs from "fs";
 import path from "path";
 
+const { showErrorMessage, showQuickPick, showInformationMessage } =
+  vscode.window;
+
 // 递归查找最近的 package.json
 function findNearestPackageJson(startPath: string) {
   let dir = startPath;
@@ -16,29 +19,41 @@ function findNearestPackageJson(startPath: string) {
 }
 
 // 执行 npm run 脚本
-function runNpmScript(
-  scriptName: string,
-  packageJsonPath: string,
-  packageJsonName: string
-) {
+async function runNpmScript({
+  scriptName,
+  packageJsonPath,
+  packageJsonName,
+}: {
+  scriptName: string;
+  packageJsonPath: string;
+  packageJsonName: string;
+}) {
   const projectDir = path.dirname(packageJsonPath);
   const terminalName = packageJsonName + "/" + scriptName;
-  let terminal = vscode.window.terminals.find((t) => t.name === terminalName);
+  const scriptCode =
+    scriptName === "codegen" ? `yarn ${scriptName}` : `npm run ${scriptName}`;
 
-  if (terminal) {
-    // 如果找到终端直接关闭，
-    terminal.dispose();
-  }
-  // 创建终端
-  terminal = vscode.window.createTerminal({
-    name: terminalName,
-    cwd: projectDir,
-  });
+  const task = new vscode.Task(
+    { type: "shell" }, // 类型
+    vscode.TaskScope.Workspace, // 任务作用域
+    terminalName, // 任务名
+    "custom", // 自定义来源名
+    new vscode.ShellExecution(scriptCode, [], {
+      cwd: projectDir,
+    })
+  );
 
-  terminal.show();
-  scriptName === "codegen"
-    ? terminal.sendText(`yarn ${scriptName}`)
-    : terminal.sendText(`npm run ${scriptName}`);
+  task.presentationOptions = {
+    // 只有出现错误时才自动打开终端
+    reveal: vscode.TaskRevealKind.Silent,
+    // 控制显示任务输出的面板是否获得焦点。
+    focus: false, // 将焦点切换到当前终端
+    echo: false, // 不显示命令输出
+    close: true, // 执行成功后自动关闭
+    panel: vscode.TaskPanelKind.Dedicated,
+  };
+
+  vscode.tasks.executeTask(task);
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -47,7 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
     async (uri: vscode.Uri) => {
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders) {
-        vscode.window.showErrorMessage("没有找到工作区");
+        showErrorMessage("没有找到工作区");
         return;
       }
 
@@ -60,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       const packageJsonPath = findNearestPackageJson(searchStartPath);
       if (!packageJsonPath) {
-        vscode.window.showErrorMessage("在项目中找不到 package.json");
+        showErrorMessage("在项目中找不到 package.json");
         return;
       }
 
@@ -68,12 +83,12 @@ export function activate(context: vscode.ExtensionContext) {
       const scripts = packageJson.scripts;
       const packageJsonName = packageJson.name;
       if (!scripts) {
-        vscode.window.showErrorMessage("在 package.json 中找不到脚本");
+        showErrorMessage("在 package.json 中找不到脚本");
         return;
       }
 
       const scriptKeys = Object.keys(scripts);
-      const selectedScript = await vscode.window.showQuickPick(scriptKeys, {
+      const selectedScript = await showQuickPick(scriptKeys, {
         placeHolder: "选择一条指令执行",
       });
 
@@ -81,9 +96,24 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      await runNpmScript(selectedScript, packageJsonPath, packageJsonName);
+      await runNpmScript({
+        scriptName: selectedScript,
+        packageJsonPath,
+        packageJsonName,
+      });
     }
   );
+
+  const taskEnd = vscode.tasks.onDidEndTaskProcess((e) => {
+    const taskName = e.execution.task.name;
+    const exitCode = e.exitCode;
+
+    if (exitCode === 0) {
+      showInformationMessage(`✅ 任务 "${taskName}" 已成功完成`);
+    }
+  });
+
+  context.subscriptions.push(taskEnd);
 
   context.subscriptions.push(disposable);
 }

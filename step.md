@@ -1,5 +1,10 @@
 # 1. 初始化
 
+```bash
+npm install -g yo
+npm install -g generator-code
+```
+
 ```
  yo code extensionProject
 ```
