@@ -1,9 +1,9 @@
-const vscode = require("vscode");
-const fs = require("fs");
-const path = require("path");
+import * as vscode from "vscode";
+import fs from "fs";
+import path from "path";
 
 // 递归查找最近的 package.json
-function findNearestPackageJson(startPath) {
+function findNearestPackageJson(startPath: string) {
   let dir = startPath;
   while (dir !== path.parse(dir).root) {
     const packageJsonPath = path.join(dir, "package.json");
@@ -16,18 +16,24 @@ function findNearestPackageJson(startPath) {
 }
 
 // 执行 npm run 脚本
-function runNpmScript(scriptName, packageJsonPath) {
+function runNpmScript(
+  scriptName: string,
+  packageJsonPath: string,
+  packageJsonName: string
+) {
   const projectDir = path.dirname(packageJsonPath);
-  const terminalName = scriptName;
+  const terminalName = packageJsonName + "/" + scriptName;
   let terminal = vscode.window.terminals.find((t) => t.name === terminalName);
 
-  if (!terminal) {
-    // 如果没有找到合适的终端，则创建一个新的
-    terminal = vscode.window.createTerminal({
-      name: terminalName,
-      cwd: projectDir,
-    });
+  if (terminal) {
+    // 如果找到终端直接关闭，
+    terminal.dispose();
   }
+  // 创建终端
+  terminal = vscode.window.createTerminal({
+    name: terminalName,
+    cwd: projectDir,
+  });
 
   terminal.show();
   scriptName === "codegen"
@@ -35,25 +41,13 @@ function runNpmScript(scriptName, packageJsonPath) {
     : terminal.sendText(`npm run ${scriptName}`);
 }
 
-function activate(context) {
-  // 创建一个状态栏按钮
-  const statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Left,
-    100
-  );
-  statusBarItem.text = "$(play)";
-  statusBarItem.tooltip = "选择并运行 package.json 中的脚本";
-  statusBarItem.command = "package-scripts.runScript";
-  statusBarItem.show();
-
-  context.subscriptions.push(statusBarItem);
-
+export function activate(context: vscode.ExtensionContext) {
   let disposable = vscode.commands.registerCommand(
-    "package-scripts.runScript",
-    async (uri) => {
+    "quick-script",
+    async (uri: vscode.Uri) => {
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders) {
-        vscode.window.showErrorMessage("No workspace folder found.");
+        vscode.window.showErrorMessage("没有找到工作区");
         return;
       }
 
@@ -66,14 +60,15 @@ function activate(context) {
 
       const packageJsonPath = findNearestPackageJson(searchStartPath);
       if (!packageJsonPath) {
-        vscode.window.showErrorMessage("No package.json found in project.");
+        vscode.window.showErrorMessage("在项目中找不到 package.json");
         return;
       }
 
       const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
       const scripts = packageJson.scripts;
+      const packageJsonName = packageJson.name;
       if (!scripts) {
-        vscode.window.showErrorMessage("No scripts found in package.json.");
+        vscode.window.showErrorMessage("在 package.json 中找不到脚本");
         return;
       }
 
@@ -82,18 +77,15 @@ function activate(context) {
         placeHolder: "选择一条指令执行",
       });
 
-      if (!selectedScript) return;
+      if (!selectedScript) {
+        return;
+      }
 
-      await runNpmScript(selectedScript, packageJsonPath);
+      await runNpmScript(selectedScript, packageJsonPath, packageJsonName);
     }
   );
 
   context.subscriptions.push(disposable);
 }
 
-function deactivate() {}
-
-module.exports = {
-  activate,
-  deactivate,
-};
+export function deactivate() {}

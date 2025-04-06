@@ -1,11 +1,12 @@
 {
-  "name": "quick-script",
-  "displayName": "quick-script",
+  "name": "quickscript",
+  "displayName": "quickscript",
   "description": "快速执行package.json中的script",
   "version": "0.0.6",
   "engines": {
     "vscode": ">=1.50.0"
   },
+  "publisher": "lx815",
   "categories": [
     "Other"
   ],
