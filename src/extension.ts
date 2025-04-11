@@ -47,7 +47,7 @@ async function runNpmScript({
     // 只有出现错误时才自动打开终端
     reveal: vscode.TaskRevealKind.Silent,
     // 控制显示任务输出的面板是否获得焦点。
-    focus: false, // 将焦点切换到当前终端
+    focus: true, // 将焦点切换到当前终端
     echo: false, // 不显示命令输出
     close: true, // 执行成功后自动关闭
     panel: vscode.TaskPanelKind.Dedicated,
