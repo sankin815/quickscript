@@ -110,6 +110,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     if (exitCode === 0) {
       showInformationMessage(`✅ 任务 "${taskName}" 已成功完成`);
+      vscode.window.terminals.forEach((terminal) => {
+        if (terminal.name !== taskName) {
+          terminal.hide();
+        }
+      });
     }
   });
 

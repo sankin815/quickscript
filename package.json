@@ -2,7 +2,7 @@
   "name": "quickscript",
   "displayName": "quickscript",
   "description": "快速执行package.json中的script",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "engines": {
     "vscode": ">=1.50.0"
   },
